@@ -1,7 +1,7 @@
-import React from "react";
 import { useForm } from "react-hook-form";
 import BreadCrumb from "../components/BreadCrumb";
 import axios from "axios";
+import { api } from "../api";
 import { Link, useNavigate } from "react-router-dom";
 import { ToastContainer, toast, Bounce } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -28,18 +28,12 @@ const Login = () => {
 
   const onSubmit = async (form: LoginForm) => {
     try {
-      const res = await axios.post(
-        "https://ecom-zb9o.vercel.app/api/login",
-        form,
-      );
-
-      console.log(res.data.user);
+      const res = await api.post("/login", form);
 
       if (res.data.msg) {
         // if (res.data.token) {
         // localStorage.setItem("token", res.data.token)
         // }
-        console.log(res.data.user);
         if (res.data.token) {
           localStorage.setItem("token", res.data.token);
         }
@@ -53,13 +47,13 @@ const Login = () => {
           navigate("/");
         }
       }
-    } catch (error: any) {
-      console.log(error);
-
+    } catch (error: unknown) {
       toast.error(
-        error?.response?.data?.msg ||
-          error?.response?.data?.message ||
-          "Login Failed",
+        axios.isAxiosError<{ msg?: string; message?: string }>(error)
+          ? error.response?.data.msg ||
+              error.response?.data.message ||
+              "Login Failed"
+          : "Login Failed",
       );
     }
   };
@@ -83,23 +77,28 @@ const Login = () => {
         ]}
       />
 
-      <div className="container mx-auto flex justify-center items-center py-10">
-        <div className="border border-[#C2C5E1] p-[50px] w-[474px]">
+      <div className="container mx-auto flex items-center justify-center py-10 sm:py-14">
+        <div className="border-primary-dark/15 w-full max-w-md rounded-xl border bg-white p-6 shadow-sm sm:p-10">
           <form
             className="flex flex-col items-center gap-2"
             onSubmit={handleSubmit(onSubmit)}
           >
-            <p className="text-[#000000] font-josefin font-bold text-[32px]">
+            <h1 className="font-josefin text-primary-dark text-3xl font-bold">
               Login
-            </p>
+            </h1>
 
-            <p className="font-lato mb-3 text-[#9096B2] text-[17px]">
+            <p className="font-lato mb-3 text-[17px] text-[#9096B2]">
               Please login using account details below.
             </p>
 
+            <label htmlFor="login-email" className="w-full text-left font-bold">
+              Email address
+            </label>
             <input
-              className="border p-4 w-full"
-              placeholder="Email Address"
+              id="login-email"
+              autoComplete="email"
+              className="border-primary-dark/20 min-h-11 w-full rounded-md border p-3"
+              placeholder="you@example.com"
               type="email"
               {...register("email", {
                 required: "Email is required",
@@ -111,13 +110,21 @@ const Login = () => {
             />
 
             {errors.email && (
-              <p className="text-red-500 self-start text-sm">
+              <p className="self-start text-sm text-red-500">
                 {errors.email.message}
               </p>
             )}
 
+            <label
+              htmlFor="login-password"
+              className="w-full text-left font-bold"
+            >
+              Password
+            </label>
             <input
-              className="border p-4 w-full"
+              id="login-password"
+              autoComplete="current-password"
+              className="border-primary-dark/20 min-h-11 w-full rounded-md border p-3"
               type="password"
               placeholder="Password"
               {...register("password", {
@@ -130,20 +137,18 @@ const Login = () => {
             />
 
             {errors.password && (
-              <p className="text-red-500 self-start text-sm">
+              <p className="self-start text-sm text-red-500">
                 {errors.password.message}
               </p>
             )}
 
-            <p className="self-start text-[#9096B2] hover:underline cursor-pointer">
-              Forgot your password?
-            </p>
-
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`w-full cursor-pointer h-14 mt-4 text-white font-bold ${
-                isSubmitting ? "bg-pink-300 cursor-not-allowed" : "bg-secondary"
+              className={`min-h-11 w-full rounded-md font-bold text-white ${
+                isSubmitting
+                  ? "bg-secondary/60 cursor-not-allowed"
+                  : "bg-secondary hover:bg-secondary/90"
               }`}
             >
               {isSubmitting ? "Logging In..." : "Sign In"}
@@ -151,7 +156,10 @@ const Login = () => {
 
             <p className="mt-4 text-[#9096B2]">
               Don't have an account?
-              <Link to="/register" className="ml-1 hover:underline">
+              <Link
+                to="/register"
+                className="ml-1 inline-flex min-h-11 items-center hover:underline"
+              >
                 Create account
               </Link>
             </p>
