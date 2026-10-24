@@ -2,7 +2,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://your-backend-api-url.com*"
+      "destination": "https://ecom-zb9o.vercel.app/api*"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
     }
   ]
 }
