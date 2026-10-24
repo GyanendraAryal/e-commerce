@@ -3,7 +3,7 @@ import "react-loading-skeleton/dist/skeleton.css";
 
 const ProductCardSkeleton = () => {
   return (
-    <div className="rounded-lg bg-white p-4 shadow-sm">
+    <div className="min-w-0 rounded-lg bg-white p-4 shadow-sm">
       <Skeleton height={220} borderRadius={8} />
 
       <div className="mt-4">
@@ -14,7 +14,7 @@ const ProductCardSkeleton = () => {
         <Skeleton height={18} width="45%" />
       </div>
 
-      <div className="mt-4 flex justify-between items-center">
+      <div className="mt-4 flex items-center justify-between">
         <Skeleton width={80} height={24} />
         <Skeleton circle width={36} height={36} />
       </div>
