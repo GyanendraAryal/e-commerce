@@ -1,75 +1,61 @@
-# React + TypeScript + Vite
+# Hekto Ecommerce
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React, TypeScript, and Vite storefront frontend.
 
-Currently, two official plugins are available:
+## Local development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Requirements: Node.js and npm.
 
-## React Compiler
-
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
-
-Note: This will impact Vite dev & build performances.
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```sh
+npm install
+cp .env.example .env.local
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Vite serves the development app at `http://localhost:5173` by default. If that
+port is occupied, Vite selects the next available port. The production build
+can be checked locally with `npm run build` followed by `npm run preview`;
+preview uses `http://localhost:4173` by default.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Backend URL
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+The frontend reads `VITE_API_BASE_URL` when Vite builds the app. It must be the
+backend origin plus the API path (including `/api`), for example:
+
+```dotenv
+VITE_API_BASE_URL=https://ecom-zb9o.vercel.app/api
+```
+
+`.env.example` contains the current backend URL. For a local backend, copy it
+to `.env.local` and set the variable to the local backend URL, such as
+`http://localhost:3000/api` (replace the port with the backend's actual port).
+The app defaults to the current deployed backend when this variable is unset.
+
+`VITE_` variables are embedded in browser JavaScript at build time. They are
+public configuration, not secrets. Set `VITE_API_BASE_URL` in the frontend
+hosting provider's environment settings before its build runs; changing it
+requires a new frontend build/deployment.
+
+## Deployment
+
+No frontend hosting-provider configuration is checked into this repository.
+For a static frontend deployment:
+
+1. Install dependencies with `npm ci`.
+2. Set `VITE_API_BASE_URL` for the deployment environment.
+3. Build with `npm run build` and publish the generated `dist/` directory.
+4. Configure the host to serve `index.html` for unknown application paths so
+   React Router routes (for example `/products` and `/carts`) work on refresh.
+5. Configure the backend's CORS allowlist to include the deployed frontend
+   origin.
+
+Vite's development and preview servers are for local testing, not production
+hosting. Hosting-specific rewrite and environment settings depend on the
+deployment provider.
+
+## Checks
+
+```sh
+npm run lint
+npm run build
 ```
