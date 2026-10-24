@@ -1,16 +1,16 @@
+@import url("https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap");
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,100..700;1,100..700&family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
 
 /* body {
   font-family: "Josefin Sans", Sans-serif;
 } */
 
 @theme {
-  --color-primary: #7E33E0;
+  --color-primary: #7e33e0;
   --color-primary-dark: #151875;
-  --color-secondary: #FB2E86;
-  --color-secondary-light: #FDAAC9;
-  --color-dark-white: #F6F5FF
+  --color-secondary: #fb2e86;
+  --color-secondary-light: #fdaac9;
+  --color-dark-white: #f6f5ff;
 }
 
 @theme {
@@ -24,10 +24,46 @@
   }
 }
 
+@layer base {
+  :root {
+    font-family: var(--font-lato);
+    color: var(--color-primary-dark);
+    background: #fff;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
+  html {
+    min-width: 320px;
+    scroll-behavior: smooth;
+  }
 
+  body {
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+  }
 
+  img {
+    display: block;
+    max-width: 100%;
+  }
 
-/* @theme {
-  --color-primary-light: #7E33E0;
-} */
+  :focus-visible {
+    outline: 3px solid var(--color-secondary);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
