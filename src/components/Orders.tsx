@@ -1,10 +1,39 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import { api } from "../api";
 import { ChevronDown, ChevronUp, Package } from "lucide-react";
 import BreadCrumb from "./BreadCrumb";
 import OrdersSkeleton from "../skeletons/OrdersSkeleton";
 
-const statusColors = {
+type OrderItem = {
+  id: number;
+  productTitle: string;
+  quantity: number;
+  price: number | string;
+};
+
+type SubOrder = {
+  id: number;
+  status: string;
+  seller: { firstName: string; lastName: string };
+  subTotal: string;
+  deliveryCharge: string;
+  orderItems: OrderItem[];
+};
+
+type Order = {
+  id: number;
+  reference: string;
+  createdAt: string;
+  phone: string;
+  address: string;
+  secondaryAddress?: string;
+  paymentMode: string;
+  status: string;
+  paymentStatus: string;
+  subOrders: SubOrder[];
+};
+
+const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-700 ring-1 ring-yellow-200",
   processing: "bg-blue-100 text-blue-700 ring-1 ring-blue-200",
   shipped: "bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200",
@@ -12,48 +41,61 @@ const statusColors = {
   cancelled: "bg-red-100 text-red-700 ring-1 ring-red-200",
 };
 
-const paymentStatusColors = {
+const paymentStatusColors: Record<string, string> = {
   paid: "bg-green-100 text-green-700 ring-1 ring-green-200",
   unpaid: "bg-red-100 text-red-700 ring-1 ring-red-200",
 };
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [expanded, setExpanded] = useState({});
+  const [error, setError] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+  const [retryCount, setRetryCount] = useState(0);
 
-  const fetchOrders = () => {
-    setLoading(true);
-    axios
-      .get("https://ecom-zb9o.vercel.app/api/orders", {
+  useEffect(() => {
+    let active = true;
+    api
+      .get("/orders", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       })
       .then((res) => {
-        setOrders(res.data.data);
+        if (active) {
+          setOrders(res.data.data);
+          setError(null);
+        }
       })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  };
+      .catch((err: unknown) => {
+        if (active) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "We couldn't load your orders. Please try again.",
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [retryCount]);
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const toggleExpand = (orderId) => {
+  const toggleExpand = (orderId: number) => {
     setExpanded((prev) => ({ ...prev, [orderId]: !prev[orderId] }));
   };
 
-  const orderTotal = (order) =>
+  const orderTotal = (order: Order) =>
     order.subOrders.reduce(
       (sum, sub) =>
         sum + parseFloat(sub.subTotal) + parseFloat(sub.deliveryCharge),
       0,
     );
 
-  const orderItemCount = (order) =>
+  const orderItemCount = (order: Order) =>
     order.subOrders.reduce((sum, sub) => sum + sub.orderItems.length, 0);
 
   if (loading) {
@@ -66,8 +108,11 @@ export default function OrdersPage() {
         <p className="font-semibold text-red-500">Failed to load orders</p>
         <p className="text-sm text-gray-400">{error}</p>
         <button
-          onClick={fetchOrders}
-          className="mt-2 rounded-lg bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100"
+          onClick={() => {
+            setLoading(true);
+            setRetryCount((count) => count + 1);
+          }}
+          className="mt-2 min-h-11 rounded-lg bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-100"
         >
           Try again
         </button>
@@ -109,10 +154,12 @@ export default function OrdersPage() {
                   {/* Order header */}
                   <button
                     onClick={() => toggleExpand(order.id)}
-                    className="flex w-full flex-col gap-4 p-5 text-left transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-3"
+                    type="button"
+                    aria-expanded={isOpen}
+                    className="flex min-h-11 w-full flex-col gap-4 p-5 text-left transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-3"
                   >
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                      <p className="text-xs font-medium tracking-wide text-gray-400 uppercase">
                         Order Reference
                       </p>
                       <p className="font-semibold text-blue-900">
@@ -121,7 +168,7 @@ export default function OrdersPage() {
                     </div>
 
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                      <p className="text-xs font-medium tracking-wide text-gray-400 uppercase">
                         Placed On
                       </p>
                       <p className="font-semibold text-blue-900">
@@ -133,7 +180,7 @@ export default function OrdersPage() {
                     </div>
 
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                      <p className="text-xs font-medium tracking-wide text-gray-400 uppercase">
                         Items
                       </p>
                       <p className="font-semibold text-blue-900">
@@ -142,11 +189,11 @@ export default function OrdersPage() {
                     </div>
 
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                      <p className="text-xs font-medium tracking-wide text-gray-400 uppercase">
                         Total
                       </p>
                       <p className="font-semibold text-blue-900">
-                        £{orderTotal(order).toFixed(2)}
+                        Rs. {orderTotal(order).toFixed(2)}
                       </p>
                     </div>
 
@@ -182,13 +229,13 @@ export default function OrdersPage() {
                     <div className="divide-y divide-gray-100 border-t border-gray-100 bg-gray-50/50 p-5">
                       <div className="grid grid-cols-1 gap-4 pb-5 text-sm text-gray-500 sm:grid-cols-3">
                         <div>
-                          <p className="mb-0.5 text-xs font-semibold uppercase tracking-wide text-blue-900">
+                          <p className="mb-0.5 text-xs font-semibold tracking-wide text-blue-900 uppercase">
                             Phone
                           </p>
                           <p>{order.phone}</p>
                         </div>
                         <div>
-                          <p className="mb-0.5 text-xs font-semibold uppercase tracking-wide text-blue-900">
+                          <p className="mb-0.5 text-xs font-semibold tracking-wide text-blue-900 uppercase">
                             Address
                           </p>
                           <p>
@@ -199,7 +246,7 @@ export default function OrdersPage() {
                           </p>
                         </div>
                         <div>
-                          <p className="mb-0.5 text-xs font-semibold uppercase tracking-wide text-blue-900">
+                          <p className="mb-0.5 text-xs font-semibold tracking-wide text-blue-900 uppercase">
                             Payment Mode
                           </p>
                           <p className="capitalize">{order.paymentMode}</p>
@@ -238,7 +285,10 @@ export default function OrdersPage() {
                                   </span>
                                 </span>
                                 <span className="font-semibold text-blue-900">
-                                  £{(item.price * item.quantity).toFixed(2)}
+                                  Rs.{" "}
+                                  {(Number(item.price) * item.quantity).toFixed(
+                                    2,
+                                  )}
                                 </span>
                               </div>
                             ))}
@@ -248,7 +298,7 @@ export default function OrdersPage() {
                                 Delivery Charge
                               </span>
                               <span className="font-semibold text-blue-900">
-                                £{parseFloat(sub.deliveryCharge).toFixed(2)}
+                                Rs. {parseFloat(sub.deliveryCharge).toFixed(2)}
                               </span>
                             </div>
                           </div>
@@ -257,7 +307,7 @@ export default function OrdersPage() {
 
                       <div className="flex justify-between pt-5 text-base font-bold text-blue-900">
                         <span>Order Total</span>
-                        <span>£{orderTotal(order).toFixed(2)}</span>
+                        <span>Rs. {orderTotal(order).toFixed(2)}</span>
                       </div>
                     </div>
                   )}
