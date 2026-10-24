@@ -1,230 +1,261 @@
-import {
-  MailIcon,
-  ChevronDown,
-  PhoneCall,
-  User,
-  Heart,
-  ShoppingCart,
-  Search,
-} from "lucide-react";
-import { Link, Navigate, NavLink, useNavigate } from "react-router-dom";
-import type { RootState } from "../redux/store";
+import { useEffect, useState } from "react";
+import { Menu, Phone, Search, ShoppingCart, User, X } from "lucide-react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import type { FormEvent } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import type { RootState } from "../redux/store";
 import { logout } from "../redux/features/userSlice";
-import {} from "../redux/features/cartSlice";
-import { useSearchParams } from "react-router-dom";
+
+const primaryLinks = [
+  { label: "Home", to: "/" },
+  { label: "Shop", to: "/shop" },
+  { label: "Products", to: "/products" },
+  { label: "Blogs", to: "/blogs" },
+  { label: "Contact", to: "/contact" },
+];
 
 const Navbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const reduxUser = useSelector((store: RootState) => store.user.value);
+  const user = useSelector((store: RootState) => store.user.value);
   const cartCount = useSelector((store: RootState) => store.cart.value.count);
-  console.log("cart count", cartCount);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const [setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (!menuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [menuOpen]);
 
-  const handleLogout = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = searchTerm.trim();
+    navigate(`/products${query ? `?q=${encodeURIComponent(query)}` : ""}`);
+    setMenuOpen(false);
+  };
+
+  const handleLogout = () => {
     dispatch(logout());
     navigate("/");
+    setMenuOpen(false);
   };
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const searchTerm = formData.get("searchTerm") as string;
-    navigate(`/products?searchTerm=${encodeURIComponent(searchTerm)}`);
-    console.log(searchTerm);
 
-    setSearchParams({
-      searchTerm,
-    });
-  };
+  const linkClasses = ({ isActive }: { isActive: boolean }) =>
+    `flex min-h-11 items-center rounded-md px-3 font-semibold transition-colors hover:text-secondary ${
+      isActive ? "text-secondary" : "text-primary-dark"
+    }`;
 
   return (
-    <>
-      <header>
-        <div className="bg-primary">
-          <div className=" container h-[44px] flex justify-between items-center">
-            <div>
-              <ul className="flex gap-6">
-                <li className="flex gap-1 items-center">
-                  <MailIcon size={16} className="text-white" />
-                  <span className="text-sm text-white">mail@gmail.com</span>
-                </li>
-                <li className="flex gap-1 items-center">
-                  <PhoneCall size={16} className="text-white" />
-                  <span className="text-sm text-white">(12345)67890</span>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <ul className="flex gap-3">
-                <li className="flex gap-1 items-center">
-                  <span className="text-sm flex items-end text-white">
-                    English
-                    <ChevronDown size={16} className="text-white" />
-                  </span>
-                </li>
-                <li className="flex gap-1 items-center">
-                  <span className="text-sm flex items-end text-white">
-                    USD
-                    <ChevronDown size={16} className="text-white" />
-                  </span>
-                </li>
-                <li className="flex gap-1 items-center">
-                  <NavLink to={"/login"} className="text-white">
-                    <span className="text-sm flex items-cente">
-                      {reduxUser ? (
-                        <>
-                          <span className="mr-1">{reduxUser.firstName}</span>
-                          <button
-                            onClick={handleLogout}
-                            className="mr-1 cursor-pointer"
-                          >
-                            Logout
-                          </button>
-                        </>
-                      ) : (
-                        "Login"
-                      )}
-                      <User size={16} />
-                    </span>
-                  </NavLink>
-                </li>
-                <li className="flex gap-1 items-center">
-                  <span className="text-sm flex gap-0.5 items-center text-white">
-                    Wishlist
-                    <Heart size={16} className="text-white" />
-                  </span>
-                </li>
-                <li className="flex relative gap-1 items-center">
-                  <span className="text-sm flex items-end text-white">
-                    <ShoppingCart size={16} className="text-white" />
-                  </span>
-                  {cartCount > 0 && (
-                    <span className="absolute -top-1 -right-2 rounded-full flex justify-center items-center text-xs p-0.5 h-4 w-4 font-bold bg-white text-red-600">
-                      {cartCount}
-                    </span>
-                  )}
-                </li>
-              </ul>
-            </div>
+    <header className="relative z-30 bg-white">
+      <div className="bg-primary text-white">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-5 gap-y-1 px-4 py-2 text-xs sm:text-sm">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+            <Link
+              className="inline-flex min-h-11 items-center gap-2"
+              to="/contact"
+            >
+              <Phone size={15} aria-hidden="true" />
+              <span>Questions? Contact us</span>
+            </Link>
+          </div>
+          <div className="flex items-center gap-3">
+            {user ? (
+              <>
+                <span className="hidden sm:inline">
+                  Hello, {user.firstName}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="min-h-11 px-2 font-semibold underline-offset-4 hover:underline"
+                >
+                  Log out
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/login"
+                className="inline-flex min-h-11 items-center gap-2 px-2 font-semibold hover:underline"
+              >
+                <User size={16} aria-hidden="true" />
+                Log in
+              </Link>
+            )}
           </div>
         </div>
-        <div className="container flex items-center justify-between">
-          <span className="font-semibold font-josefin text-[34px] cursor-pointer pr-[85px] text-primary-dark">
-            <Link to="/">Hekto</Link>
-          </span>
-          <ul className="flex capitalize gap-[35px]">
-            <li className="flex text-primary-dark items-center cursor-pointer">
-              <NavLink
-                to="/"
-                className={({ isActive }) =>
-                  `${isActive ? "text-secondary" : ""} flex items-center`
-                }
-              >
-                Home
-                <ChevronDown size={16} />
-              </NavLink>
-            </li>
-            
-            {reduxUser?.email && (
-              <>
-                <li className="text-primary-dark cursor-pointer">
-                  <NavLink
-                    className={({ isActive }) =>
-                      `${isActive ? "text-secondary" : "text-primary-dark"}`
-                    }
-                    to="/products"
-                  >
-                    Products
-                  </NavLink>
-                </li>
-                <li className="text-primary-dark cursor-pointer">
-                  <NavLink
-                    className={({ isActive }) =>
-                      `${isActive ? "text-secondary" : "text-primary-dark"}`
-                    }
-                    to="/blogs"
-                  >
-                    Blogs
-                  </NavLink>
-                </li>
-                <li className="text-primary-dark cursor-pointer">
-                  <NavLink
-                    className={({ isActive }) =>
-                      `${isActive ? "text-secondary" : "text-primary-dark"}`
-                    }
-                    to="/shop"
-                  >
-                    Shop
-                  </NavLink>
-                </li>
-                <li className="text-primary-dark cursor-pointer">
-                  <NavLink
-                    to="/carts"
-                    className={({ isActive }) =>
-                      `${isActive ? "text-secondary" : "text-primary-dark"}`
-                    }
-                  >
-                    Carts
-                  </NavLink>
-                </li>
-                <li className="text-primary-dark cursor-pointer">
-                  <NavLink
-                    to="/orders"
-                    className={({ isActive }) =>
-                      `${isActive ? "text-secondary" : "text-primary-dark"}`
-                    }
-                  >
-                    Orders
-                  </NavLink>
-                </li>
-              </>
-            )}
+      </div>
 
-            {reduxUser && reduxUser.isSeller && (
-              <>
-                <span><NavLink
-                className={({ isActive }) =>
-                  `${isActive ? "text-secondary" : "text-primary-dark"}`
-                }
-                to="/my-products"
+      <div className="border-primary-dark/10 border-b shadow-sm">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
+          <Link
+            to="/"
+            aria-label="Hekto home"
+            className="font-josefin text-primary-dark shrink-0 text-3xl font-bold sm:text-4xl"
+          >
+            Hekto
+          </Link>
+
+          <nav
+            aria-label="Main navigation"
+            className="hidden items-center gap-1 lg:flex"
+          >
+            {primaryLinks.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                end={link.to === "/"}
+                className={linkClasses}
+                onClick={() => setMenuOpen(false)}
               >
-                My Products
-              </NavLink></span>
-                
+                {link.label}
+              </NavLink>
+            ))}
+            {user && (
+              <>
+                <NavLink to="/carts" className={linkClasses}>
+                  Cart
+                </NavLink>
+                <NavLink to="/orders" className={linkClasses}>
+                  Orders
+                </NavLink>
               </>
             )}
-            <li className="text-primary-dark">
-              <NavLink
-                className={({ isActive }) =>
-                  `${isActive ? "text-secondary" : "text-primary-dark"}`
-                }
-                to="/contact"
-              >
-                Contact
+            {user?.isSeller && (
+              <NavLink to="/my-products" className={linkClasses}>
+                My Products
               </NavLink>
-            </li>
-          </ul>
-          <form onSubmit={handleSubmit} className="flex">
+            )}
+          </nav>
+
+          <form
+            onSubmit={handleSearch}
+            role="search"
+            className="hidden max-w-xs min-w-0 flex-1 md:flex"
+          >
+            <label className="sr-only" htmlFor="site-search">
+              Search products
+            </label>
             <input
-              name="searchTerm"
-              // value={searchTerm}
-              // onChange={(e)=> setSearchTerm(e.target.value)}
-              className="border px-2 w-[250px] border-[#E7E6EF]"
+              id="site-search"
+              type="search"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Search products"
+              className="border-primary-dark/20 min-w-0 flex-1 rounded-l-md border px-3 py-2 text-sm"
             />
             <button
               type="submit"
-              className="bg-secondary cursor-pointer border-[#E7E6EF] h-10 py-2 px-3"
+              aria-label="Search products"
+              className="bg-secondary hover:bg-secondary/90 flex min-h-11 min-w-11 items-center justify-center rounded-r-md text-white"
             >
-              <Search size={20} className="inline-block text-[#F3F9FF]" />
+              <Search size={19} aria-hidden="true" />
             </button>
           </form>
+
+          <div className="flex shrink-0 items-center gap-1">
+            {user && (
+              <Link
+                to="/carts"
+                aria-label={`Cart${cartCount ? `, ${cartCount} items` : ""}`}
+                className="text-primary-dark hover:bg-dark-white relative flex min-h-11 min-w-11 items-center justify-center rounded-md"
+              >
+                <ShoppingCart size={20} aria-hidden="true" />
+                {cartCount > 0 && (
+                  <span className="bg-secondary absolute top-0 right-0 flex size-5 items-center justify-center rounded-full text-xs font-bold text-white">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+            )}
+            <button
+              type="button"
+              aria-label={
+                menuOpen ? "Close navigation menu" : "Open navigation menu"
+              }
+              aria-expanded={menuOpen}
+              aria-controls="mobile-navigation"
+              onClick={() => setMenuOpen((open) => !open)}
+              className="text-primary-dark hover:bg-dark-white flex min-h-11 min-w-11 items-center justify-center rounded-md lg:hidden"
+            >
+              {menuOpen ? <X size={23} /> : <Menu size={23} />}
+            </button>
+          </div>
         </div>
-      </header>
-    </>
+
+        {menuOpen && (
+          <nav
+            id="mobile-navigation"
+            aria-label="Mobile navigation"
+            className="border-primary-dark/10 border-t bg-white px-4 py-3 shadow-lg lg:hidden"
+          >
+            <div className="mx-auto flex max-w-7xl flex-col">
+              {primaryLinks.map((link) => (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  end={link.to === "/"}
+                  className={linkClasses}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {link.label}
+                </NavLink>
+              ))}
+              {user && (
+                <>
+                  <NavLink
+                    to="/carts"
+                    className={linkClasses}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Cart
+                  </NavLink>
+                  <NavLink
+                    to="/orders"
+                    className={linkClasses}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Orders
+                  </NavLink>
+                </>
+              )}
+              {user?.isSeller && (
+                <NavLink
+                  to="/my-products"
+                  className={linkClasses}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  My Products
+                </NavLink>
+              )}
+              <form onSubmit={handleSearch} role="search" className="mt-2 flex">
+                <label className="sr-only" htmlFor="mobile-site-search">
+                  Search products
+                </label>
+                <input
+                  id="mobile-site-search"
+                  type="search"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Search products"
+                  className="border-primary-dark/20 min-w-0 flex-1 rounded-l-md border px-3 py-2"
+                />
+                <button
+                  type="submit"
+                  aria-label="Search products"
+                  className="bg-secondary flex min-h-11 min-w-11 items-center justify-center rounded-r-md text-white"
+                >
+                  <Search size={19} aria-hidden="true" />
+                </button>
+              </form>
+            </div>
+          </nav>
+        )}
+      </div>
+    </header>
   );
 };
 
