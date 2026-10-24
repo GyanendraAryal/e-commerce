@@ -1,62 +1,87 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Home from "./pages/Home.tsx";
-import Login from "./pages/Login.tsx";
-import Signup from "./pages/Signup.tsx";
-import Layout from "./pages/Layout.tsx";
-import ProductsListing from "./pages/products/ProductsListing.tsx";
-import ProductDetails from "./pages/products/ProductDetails.tsx";
+import {
+  createBrowserRouter,
+  Navigate,
+  RouterProvider,
+} from "react-router-dom";
 import axios from "axios";
+import { api } from "./api.ts";
 import { setUser } from "./redux/features/userSlice.ts";
 import { useDispatch } from "react-redux";
-import { useEffect, useState } from "react";
-import Cart from "./components/CartPage.tsx";
-import Orders from "./components/Orders.tsx";
+import { lazy, Suspense, useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import ProtectedRoutes from "./pages/ProtectedRoutes.tsx";
-import Contact from "./pages/Contact.tsx";
-import Blogs from "./pages/Blogs.tsx";
-import Shop from "./pages/Shop.tsx";
-import AdminLayout from "./components/layout/AdminLayout.tsx";
-import Dashboard from "./admin/Dashboard.tsx";
-import Categories from "./admin/Categories.tsx";
-import Products from "./admin/Products.tsx";
+import Layout from "./pages/Layout.tsx";
 
-// const router = createBrowserRouter([
-//   {
-//     path: '/',
-//     element: <Layout loggedIn={loggedIn} />,
-//     children: [
-//       { path: '', element: <Home /> },
-//       // Passes the state setter correctly to Login
-//       { path: 'login', element: <Login setLoggedIn={setLoggedIn} /> },
-//       { path: 'register', element: <Signup /> },
-//     ],
-//   },
-// ])
+const Home = lazy(() => import("./pages/Home.tsx"));
+const Login = lazy(() => import("./pages/Login.tsx"));
+const Signup = lazy(() => import("./pages/Signup.tsx"));
+const ProductsListing = lazy(
+  () => import("./pages/products/ProductsListing.tsx"),
+);
+const ProductDetails = lazy(
+  () => import("./pages/products/ProductDetails.tsx"),
+);
+const Cart = lazy(() => import("./components/CartPage.tsx"));
+const Orders = lazy(() => import("./components/Orders.tsx"));
+const Contact = lazy(() => import("./pages/Contact.tsx"));
+const Blogs = lazy(() => import("./pages/Blogs.tsx"));
+const Shop = lazy(() => import("./pages/Shop.tsx"));
+const AdminLayout = lazy(() => import("./components/layout/AdminLayout.tsx"));
+const Dashboard = lazy(() => import("./admin/Dashboard.tsx"));
+const Categories = lazy(() => import("./admin/Categories.tsx"));
+const Products = lazy(() => import("./admin/Products.tsx"));
+const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+const AccessDenied = lazy(() => import("./pages/AccessDenied.tsx"));
+const SellerProduct = lazy(() => import("./seller/SellerProduct.tsx"));
+
+function Page({ children }: { children: ReactNode }) {
+  return (
+    <Suspense
+      fallback={
+        <p
+          role="status"
+          className="text-secondary flex min-h-48 items-center justify-center text-lg font-bold"
+        >
+          Loading page...
+        </p>
+      }
+    >
+      {children}
+    </Suspense>
+  );
+}
 
 function App() {
-  let token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(token ? true : false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     if (token) {
-      axios
-        .get("https://ecom-zb9o.vercel.app/api/auth/me", {
+      api
+        .get("/auth/me", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         })
         .then((res) => {
-          // console.log(res.data)
           dispatch(setUser(res.data));
+        })
+        .catch((error: unknown) => {
+          setAuthError(
+            axios.isAxiosError<{ msg?: string; message?: string }>(error)
+              ? error.response?.data.msg ||
+                  error.response?.data.message ||
+                  "We couldn't verify your sign-in. Please log in again."
+              : "We couldn't verify your sign-in. Please log in again.",
+          );
         })
         .finally(() => {
           setIsLoading(false);
         });
-    } else {
-      setIsLoading(false);
     }
-  }, []);
+  }, [dispatch, token]);
 
   const router = createBrowserRouter([
     {
@@ -66,19 +91,36 @@ function App() {
       children: [
         {
           path: "",
-          element: <AdminLayout />,
+          element: (
+            <Page>
+              <AdminLayout />
+            </Page>
+          ),
           children: [
+            { index: true, element: <Navigate to="dashboard" replace /> },
             {
               path: "dashboard",
-              element: <Dashboard />,
+              element: (
+                <Page>
+                  <Dashboard />
+                </Page>
+              ),
             },
             {
               path: "categories",
-              element: <Categories />,
+              element: (
+                <Page>
+                  <Categories />
+                </Page>
+              ),
             },
             {
               path: "products",
-              Component: Products,
+              element: (
+                <Page>
+                  <Products />
+                </Page>
+              ),
             },
           ],
         },
@@ -88,22 +130,80 @@ function App() {
       path: "/",
       element: <Layout />,
       children: [
-        { path: "", element: <Home /> },
-        { path: "login", element: <Login /> },
-        { path: "register", element: <Signup /> },
-        { path: "shop", element: <Shop /> },
-        { path: "blogs", element: <Blogs /> },
-        { path: "contact", element: <Contact /> },
+        {
+          path: "",
+          element: (
+            <Page>
+              <Home />
+            </Page>
+          ),
+        },
+        {
+          path: "login",
+          element: (
+            <Page>
+              <Login />
+            </Page>
+          ),
+        },
+        {
+          path: "register",
+          element: (
+            <Page>
+              <Signup />
+            </Page>
+          ),
+        },
+        {
+          path: "shop",
+          element: (
+            <Page>
+              <Shop />
+            </Page>
+          ),
+        },
+        {
+          path: "blogs",
+          element: (
+            <Page>
+              <Blogs />
+            </Page>
+          ),
+        },
+        {
+          path: "contact",
+          element: (
+            <Page>
+              <Contact />
+            </Page>
+          ),
+        },
+        {
+          path: "forbidden",
+          element: (
+            <Page>
+              <AccessDenied />
+            </Page>
+          ),
+        },
         {
           path: "products",
           children: [
             {
               path: "",
-              element: <ProductsListing />,
+              element: (
+                <Page>
+                  <ProductsListing />
+                </Page>
+              ),
             },
             {
               path: ":slug",
-              element: <ProductDetails />,
+              element: (
+                <Page>
+                  <ProductDetails />
+                </Page>
+              ),
             },
           ],
         },
@@ -111,24 +211,81 @@ function App() {
           path: "",
           element: <ProtectedRoutes />,
           children: [
-            { path: "/carts", element: <Cart /> },
-            { path: "/orders", element: <Orders /> },
+            {
+              path: "/carts",
+              element: (
+                <Page>
+                  <Cart />
+                </Page>
+              ),
+            },
+            {
+              path: "/orders",
+              element: (
+                <Page>
+                  <Orders />
+                </Page>
+              ),
+            },
           ],
         },
+        {
+          path: "",
+          element: <ProtectedRoutes forSeller />,
+          children: [
+            {
+              path: "my-products",
+              element: (
+                <Page>
+                  <SellerProduct />
+                </Page>
+              ),
+            },
+          ],
+        },
+        {
+          path: "*",
+          element: (
+            <Page>
+              <NotFound />
+            </Page>
+          ),
+        },
       ],
+    },
+    {
+      path: "*",
+      element: (
+        <Page>
+          <NotFound />
+        </Page>
+      ),
     },
   ]);
 
   return (
-    <>
+    <div>
       {isLoading ? (
-        <p className="text-secondary font-bold mt-[20%] text-4xl text-center">
+        <p
+          role="status"
+          className="text-secondary flex min-h-screen items-center justify-center text-2xl font-bold sm:text-4xl"
+        >
           Loading...
         </p>
       ) : (
-        <RouterProvider router={router} />
+        <>
+          {authError && (
+            <p
+              role="alert"
+              className="border-b border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-800"
+            >
+              {authError}
+            </p>
+          )}
+          <RouterProvider router={router} />
+        </>
       )}
-    </>
+    </div>
   );
 }
 
