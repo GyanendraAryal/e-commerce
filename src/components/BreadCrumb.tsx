@@ -1,151 +1,72 @@
-import { Home } from "lucide-react";
-import { useLocation } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
-type path = {
-    title: string;
-    link?: string;
+type BreadcrumbPath = {
+  title: string;
+  link?: string;
 };
 
-// type Bread = {
-//   title: string;
-//   path: string;
-// };
+type BreadCrumbProps = {
+  title: string;
+  paths?: BreadcrumbPath[];
+};
 
-const BreadCrumb = ({ title, paths }: { title: string; paths: path[] }) => {
-    const location = useLocation();
-    //   console.log(location);
-    const pathname = location.pathname;
-    const pathArr = pathname.split("/");
-    const newPath = pathArr.splice(1);
+const BreadCrumb = ({ title, paths = [] }: BreadCrumbProps) => {
+  const location = useLocation();
+  const segments = location.pathname.split("/").filter(Boolean);
+  const items =
+    paths.length > 0
+      ? paths
+      : segments.map((segment, index) => ({
+          title: decodeURIComponent(segment),
+          link: `/${segments.slice(0, index + 1).join("/")}`,
+        }));
 
-    console.log("Path", newPath);
-
-    return (
-        <div className=" bg-dark-white">
-            <div className="container py-[40px] sm:py-[48px] md:py-[56px] lg:py-[64px] xl:py-[80px] 2xl:py-[96px] ">
-                <span className="font-josefin capitalize text-[36px]">
-                    {title || newPath[0]}
+  return (
+    <div className="bg-dark-white">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:py-10 lg:py-12">
+        <p className="font-josefin text-primary-dark text-3xl font-bold capitalize sm:text-4xl">
+          {title}
+        </p>
+        <nav aria-label="Breadcrumb" className="mt-2">
+          <ol className="flex flex-wrap items-center gap-2 text-sm">
+            <li>
+              <Link
+                className="hover:text-secondary inline-flex min-h-11 items-center"
+                to="/"
+              >
+                Home
+              </Link>
+            </li>
+            {items.map((item, index) => (
+              <li
+                key={`${item.title}-${index}`}
+                className="flex items-center gap-2"
+              >
+                <span aria-hidden="true" className="text-primary-dark/50">
+                  /
                 </span>
-                <ul className="flex gap-1">
-                    <li>
-                        <Link className="text-primary-dark" to="/">
-                            Home
-                        </Link>
-                    </li>
-                    {
-                        paths ? (
-                            <>
-                          {paths.map((el, index)=>(
-                                <li key={index}>
-                                    <Link className="text-primary-dark" to={el.link}>
-                                        {el.title}
-                                    </Link>
-                                </li>
-                                ))}
-                            </>) : (
-                            <>
-                                 { newPath.map((el, index) => (
-                                <li key={index}>
-                                    <Link className="text-primary-dark" to="/">
-                                        {el}
-                                    </Link>
-                                </li>
-                                ))}
-                            </>)
-
-                    }
-                    {/* {newPath.map((el, index) => (
-            <li key={index}>
-              <Link className="text-primary-dark" to="/">
-                {el}
-              </Link>
-            </li>
-          ))} */}
-                    {/* {paths.map((el, index) => (
-            <li key={index}>
-              <Link className="text-primary-dark" to={el.link}>
-                {el.title}
-              </Link>
-            </li>
-          ))} */}
-                </ul>
-            </div>
-        </div>
-    );
+                {item.link && index < items.length - 1 ? (
+                  <Link
+                    className="hover:text-secondary inline-flex min-h-11 items-center capitalize"
+                    to={item.link}
+                  >
+                    {item.title}
+                  </Link>
+                ) : (
+                  <span
+                    aria-current="page"
+                    className="text-primary-dark/70 inline-flex min-h-11 items-center capitalize"
+                  >
+                    {item.title}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ol>
+        </nav>
+      </div>
+    </div>
+  );
 };
 
 export default BreadCrumb;
-
-// import { Link, useLocation } from "react-router-dom";
-
-// type Bread = {
-//     title: string;
-// };
-
-// const BreadCrumb = ({ title }: Bread) => {
-//     const location = useLocation();
-
-//     const paths = location.pathname.split("/").filter(Boolean);
-
-//     return (
-//         <div className="bg-dark-white">
-//             <div className="container py-[40px] sm:py-[48px] md:py-[56px] lg:py-[64px] xl:py-[80px] 2xl:py-[96px]">
-//                 <span className="font-josefin text-[36px]">{title}</span>
-
-//                 <ul className="flex gap-2">
-//                     <li>
-//                         <Link to="/">Home</Link>
-//                     </li>
-
-//                     {paths.map((path, index) => {
-//                         const route = "/" + paths.slice(0, index + 1).join("/");
-
-//                         return (
-//                             <li key={route}>
-//                                 /
-//                                 <Link
-//                                     to={route}
-//                                     className={
-//                                         index === paths.length - 1
-//                                             ? "text-secondary"
-//                                             : ""
-//                                     }
-//                                 >
-//                                     {path.charAt(0).toUpperCase() + path.slice(1)}
-//                                 </Link>
-//                             </li>
-//                         );
-//                     })}
-//                 </ul>
-//             </div>
-//         </div>
-//     );
-// };
-
-// export default BreadCrumb;
-
-{
-    /* <li>
-                <Link className="text-primary-dark" to="/">
-                  {newPath[0]}
-                </Link>
-              </li>
-              <li>
-                <Link className="text-primary-dark" to="/pages">
-                  {props.itemTwo}
-                </Link>
-              </li>
-              <li>
-                <span>
-                  <Link
-                    className={
-                      location.pathname ? "text-secondary" : "text-primary-dark"
-                    }
-                    to={props.path}
-                  >
-                    {location.pathname.replace("/", "")}
-                  </Link>
-                </span>
-              </li> */
-}
