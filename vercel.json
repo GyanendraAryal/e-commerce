@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://ecom-zb9o.vercel.app*"
+      "destination": "https://ecom-zb9o.vercel.app/api/:path*"
     },
     {
       "source": "/((?!api/).*)",

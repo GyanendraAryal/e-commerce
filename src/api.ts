@@ -1,9 +1,9 @@
 import axios from "axios";
 
 const apiBaseUrl = (
-  import.meta.env.VITE_API_BASE_URL || "https://ecom-zb9o.vercel.app/api"
+    import.meta.env.VITE_API_BASE_URL || "/api"
 ).replace(/\/+$/, "");
 
 export const api = axios.create({
-  baseURL: apiBaseUrl,
+    baseURL: apiBaseUrl,
 });
